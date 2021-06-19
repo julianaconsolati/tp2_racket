@@ -135,6 +135,14 @@ Integrantes:
 ; Toma una lista de paises y una funcion "predicado", en este caso
 ; llamada transformar que toma un pais (primer elemento de la lista)
 ; lo transforma y lo concatena con el resto de forma recursiva.
+(check-expect (transformar-paises '() transformacion-recalcular) '() )
+(check-expect (transformar-paises LISTA-PAISES-TEST transformacion-recalcular) 
+              (list ANDORRA GUATEMALA (make-Pais "Angentina" (list (make-Registro 2014 38500000)
+                                                                  (make-Registro 2015 40000000))) 
+                    CHINA )
+)                
+
+
 (define (transformar-paises lp transformacion)
   (cond [(empty? lp) empty]
         [else (cons (transformacion (first lp))
@@ -145,7 +153,9 @@ Integrantes:
 ; y segun el predicado que se le haya pasado predicado*
 ; los va filtrando, agregando a los aprobados por el predicado
 ; en una nueva lista y eliminando los que no.
-(check-expect filtrar-paises LISTA-PAISES-TEST)
+(check-expect (filtrar-paises '() predicado-registro-incompleto ) '() )
+(check-expect (filtrar-paises LISTA-PAISES-TEST predicado-registro-incompleto ) (list ARGENTINA CHINA) )
+
 (define (filtrar-paises lp predicado)
   (cond [(empty? lp) empty]
         [else (if (predicado (first lp))
@@ -156,6 +166,9 @@ Integrantes:
 ; Toma una lista de paises lp* y le aplica un operador a cada uno operador*,
 ; cuando llegue al final de la lista se le aplica el numero neutro
 ; que depende del tipo de operacion que se haga hecho, nuetro*.
+(check-expect (operar-sobre-paises '() operacion-sumar-poblaciones 0) 0)
+(check-expect (operar-sobre-paises (list ARGENTINA CHINA) operacion-sumar-poblaciones 0) 2075000001)
+
 (define (operar-sobre-paises lp operador neutro)
   (cond [(empty? lp) neutro]
         [else (operador (first lp) (operar-sobre-paises (rest lp) operador neutro))]))
@@ -214,15 +227,15 @@ Integrantes:
 ; si la fecha en la que se condujo el censo fue 2014
 ; En caso de que el incremento resulte en un número no entero,
 ; se redondea
-(check-expect (recalculo (make-registro 2014 10))
-              (make-registro 2014 11))
-(check-expect (recalculo (make-registro 2016 10))
-              (make-registro 2016 10))
+(check-expect (recalculo (make-Registro 2014 10))
+              (make-Registro 2014 11))
+(check-expect (recalculo (make-Registro 2016 10))
+              (make-Registro 2016 10))
 
 (define (recalculo reg)
-  (if (= (registro-Fecha reg) 2014)
-      (make-registro (registro-Fecha reg) (exact-round (* 1.1 (registro-Poblacion reg))))
-      (make-registro (registro-Fecha reg) (registro-Poblacion reg))))
+  (if (= (Registro-Fecha reg) 2014)
+      (make-Registro (Registro-Fecha reg) (exact-round (* 1.1 (Registro-Poblacion reg))))
+      (make-Registro (Registro-Fecha reg) (Registro-Poblacion reg))))
 
 ; transformacion-recalcular: Pais -> Pais
 ; transformacion-recalcular toma un país y aumenta en 10% la población asociada
@@ -283,8 +296,6 @@ Integrantes:
 ; predicado-superpoblados toma un país y devuelve #t en el caso que haya
 ; censado más de 1000 millones de habitantes en el 2019
 ; Suponemos que la última entrada de cada país se corresponde con el año 2019
-(check-expect (predicado-superpoblados GUATEMALA) #f)
-(check-expect (predicado-superpoblados CHINA) #t)
 
 ; predicado-superpoblados: Pais -> Boolean
 ; Es la funcion predicado usada en LISTA-PAISES-SUPERPOBLADOS
@@ -292,6 +303,9 @@ Integrantes:
 ; mayor a MILMILLONES en el ultimo año censado.
 ; Luego la funcion filtrar-paises lo recursa hasta recorrer
 ; todos los registro de poblacion de ese pais.
+(check-expect (predicado-superpoblados GUATEMALA) #f)
+(check-expect (predicado-superpoblados CHINA) #t)
+
 (define (predicado-superpoblados pais)
   (> (Registro-Poblacion (last (Pais-Registros pais))) MILMILLONES)) 
 
@@ -300,7 +314,6 @@ Integrantes:
 ; una poblacion mayor a MILMILLONES.
 (define LISTA-PAISES-SUPERPOBLADOS
   (filtrar-paises LISTA-PAISES-RECALCULADA predicado-superpoblados)) 
-
 
 ; Nombres de los países superpoblados
 ; Toma el atributo de "Pais-Nombre" a la estructura de pais,
@@ -316,11 +329,10 @@ Integrantes:
 ; de todos los países de los cuales tenemos registro.
 
 ; operacion-sumar-poblaciones: Pais Number -> Pais
-; Suma de poblaciones de un pais indicado, utilizando foldr.
-; Se le pasa un pais en el cual se hace la suma
-; y un numero n* que funciona como primer elemento para el foldr.
+; Suma de un tal numero n* con la suma de los Registro-Poblacion
+; del registro de del pais que se le paso a la funcion pais*.
 (check-expect (operacion-sumar-poblaciones ARGENTINA 0) 75000000)
-(check-expect (operacion-sumar-poblaciones GUATEMALA 0) )
+(check-expect (operacion-sumar-poblaciones GUATEMALA 0) 32499999)
 
 (define (operacion-sumar-poblaciones pais n)
   (+ n (foldr + 0 (map Registro-Poblacion (Pais-Registros pais)))))
