@@ -39,6 +39,9 @@ Integrantes:
 (define CHINA (make-Pais "China" (list (make-Registro 2018 999999956)
                                        (make-Registro 2019 1000000045))))
 
+(define LISTA-PAISES-TEST (list ANDORRA GUATEMALA ARGENTINA CHINA))
+(define LISTA-PAISES-TEST-S-CHINA (list ANDORRA GUATEMALA ARGENTINA ))
+
 ;---------------------Preparación de los datos------------------------
 
 ; Datos de entrada
@@ -116,13 +119,12 @@ Integrantes:
 (define (armar-paises lnp lr)
   (cond [(empty? lnp) empty]
         [(empty? lr) empty]
-        ;        #|COMPLETADO|##|COMPLETADO|# 
         [else (cons   (make-Pais (first lnp) (first lr) ) 
                       (armar-paises (rest lnp) (rest lr) ) 
               )
         ]))
 
-; Nombres de países       #|COMPLETADO|#
+; Nombres de países
 (define LISTA-NOMBRE-PAISES (map first DATOS-PAISES))
 ; Lista de países
 (define LISTA-PAISES (armar-paises LISTA-NOMBRE-PAISES LISTA-REGISTROS))
@@ -130,12 +132,20 @@ Integrantes:
 ;---------------------Funciones de alto orden sobre listas de países------------------------
 
 ; transformar-paises: List(Pais) (Pais -> Pais) -> List(Pais)
+; Toma una lista de paises y una funcion "predicado", en este caso
+; llamada transformar que toma un pais (primer elemento de la lista)
+; lo transforma y lo concatena con el resto de forma recursiva.
 (define (transformar-paises lp transformacion)
   (cond [(empty? lp) empty]
         [else (cons (transformacion (first lp))
                     (transformar-paises (rest lp) transformacion))]))
 
 ; filtrar-paises: List(Pais) (Pais -> Boolean)-> List(Pais)
+; filtrar-paises toma una lista de paises lp*
+; y segun el predicado que se le haya pasado predicado*
+; los va filtrando, agregando a los aprobados por el predicado
+; en una nueva lista y eliminando los que no.
+(check-expect filtrar-paises LISTA-PAISES-TEST)
 (define (filtrar-paises lp predicado)
   (cond [(empty? lp) empty]
         [else (if (predicado (first lp))
@@ -143,6 +153,9 @@ Integrantes:
                   (filtrar-paises (rest lp) predicado))]))
 
 ; operar-sobre-paises: List(Pais) (Pais X -> X) X -> X
+; Toma una lista de paises lp* y le aplica un operador a cada uno operador*,
+; cuando llegue al final de la lista se le aplica el numero neutro
+; que depende del tipo de operacion que se haga hecho, nuetro*.
 (define (operar-sobre-paises lp operador neutro)
   (cond [(empty? lp) neutro]
         [else (operador (first lp) (operar-sobre-paises (rest lp) operador neutro))]))
@@ -158,60 +171,62 @@ Integrantes:
 ; u operacion-registro-incompleto para pasarle como argumento a
 ; alguno de los patrones de alto orden
 
-; #|COMPLETAR|# signatura función auxiliar
-; #|COMPLETAR|# declaracion de propósito función auxiliar
-#|COMPLETAR|# ;casos de prueba función auxiliar
-#|COMPLETAR|# ;definición función auxiliar
-
-; Funcion auxiliar para predicado-registro-incompleto
 ; registro-incompleto: (list Registro -> Boolean)
+; Funcion auxiliar para predicado-registro-incompleto
+; Toma una lista de registros de un pais e indica si en alguna
+; de sus instancias el Registro-Poblacion es igual a -1
+; indicando que no se realizo el censo en ese año.
+(check-expect (registro-incompleto (Pais-Registros ANDORRA) ) #f)
+(check-expect (registro-incompleto (Pais-Registros ARGENTINA) ) #t)
+
 (define (registro-incompleto  lr) (cond
   [(empty? lr) #t]
   [else (if (= (Registro-Poblacion (first lr) ) -1)
             #f
          (registro-incompleto (rest lr) ))]))
-(check-expect (registro-incompleto (Pais-Registros ANDORRA) ) #f)
-(check-expect (registro-incompleto (Pais-Registros ARGENTINA) ) #t)
 
-; Funcion auxiliar para LISTA-PAISES-REGISTRO-COMPLETO
 ; predicado-registro-incompleto: (Pais -> Boolean)
-(define (predicado-registro-incompleto p) (registro-incompleto (Pais-Registros p)))
+; Funcion auxiliar para LISTA-PAISES-REGISTRO-COMPLETO
+; Toma un pais y devuelve true o false dependiendo si se verifica
+; registro-incompleto para el registro del pais que se le paso.
 (check-expect (predicado-registro-incompleto ANDORRA) #f)
 (check-expect (predicado-registro-incompleto ARGENTINA) #t)
+(define (predicado-registro-incompleto p) (registro-incompleto (Pais-Registros p)))
 
+; Lista de paises con registro completo.
+; Filtra la lista de paises registrados
+; eliminado los que poseen un registro incompleto.
+(check-expect (member "West Bank and Gaza" (map Pais-Nombre LISTA-PAISES)) #t)
+(check-expect (member "West Bank and Gaza" (map Pais-Nombre LISTA-PAISES-REGISTRO-COMPLETO)) #f)
 (define LISTA-PAISES-REGISTRO-COMPLETO
-  ;#|COMPLETADO|#             #|COMPLETADO|#
   (filtrar-paises LISTA-PAISES predicado-registro-incompleto))
 
 ; Algunos casos de test para LISTA-PAISES-REGISTRO-COMPLETO
 ; "West Bank and Gaza" no tiene que estar en el listado de países
 ; con registro completo pero sí tienen que estar en el listado de países
-(check-expect (member "West Bank and Gaza" (map Pais-Nombre LISTA-PAISES)) #t)
-(check-expect (member "West Bank and Gaza" (map Pais-Nombre LISTA-PAISES-REGISTRO-COMPLETO)) #f)
 
 ; Los censos del 2014 se calcularon mal. Aumentarlos un 10%.
 ; Trabajamos con la lista de países con registro completo
 
-; Función auxiliar extra de ayuda, se recomienda utilizar
 ; recalculo: Registro -> Registro
+; Función auxiliar extra de ayuda, se recomienda utilizar
 ; recalculo toma un registro e incrementa la población en un 10%
 ; si la fecha en la que se condujo el censo fue 2014
 ; En caso de que el incremento resulte en un número no entero,
 ; se redondea
+(check-expect (recalculo (make-registro 2014 10))
+              (make-registro 2014 11))
+(check-expect (recalculo (make-registro 2016 10))
+              (make-registro 2016 10))
 
 (define (recalculo reg)
   (if (= (registro-Fecha reg) 2014)
       (make-registro (registro-Fecha reg) (exact-round (* 1.1 (registro-Poblacion reg))))
       (make-registro (registro-Fecha reg) (registro-Poblacion reg))))
 
-(check-expect (recalculo (make-registro 2014 10))
-              (make-registro 2014 11))
-(check-expect (recalculo (make-registro 2016 10))
-              (make-registro 2016 10))
-
 ; transformacion-recalcular: Pais -> Pais
 ; transformacion-recalcular toma un país y aumenta en 10% la población asociada
-; al año 2014 en sus registros
+; al año 2014 en sus registros.
 (check-expect (transformacion-recalcular ARGENTINA)
               (make-Pais "Angentina" (list (make-Registro 2014 38500000)
                                            (make-Registro 2015 40000000))))
@@ -220,6 +235,9 @@ Integrantes:
 (define (transformacion-recalcular pais)
   (make-Pais (Pais-Nombre pais) (map recalculo (Pais-Registros pais)))) #|COMPLETADO|#
 
+; Lista de paises recalculados.
+; Agarra la lista de paises con registro completo
+; y los transforma utilizanco la funcion transformacion-recalcular.
 (define LISTA-PAISES-RECALCULADA
   (transformar-paises LISTA-PAISES-REGISTRO-COMPLETO transformacion-recalcular))
 
@@ -248,8 +266,8 @@ Integrantes:
 ; que hace que un país sea superpoblado
 (define MILMILLONES 1000000000)
 
+; last: (list a) -> a | Boolean
 ; Función auxiliar extra de ayuda, se recomienda utilizar
-; last: #|COMPLETAR|# signatura
 ; last toma una lista y devuelve el último elemento si es no vacia
 ; Caso contrario devuelve false
 (check-expect (last empty) #f)
@@ -258,8 +276,8 @@ Integrantes:
 
 (define (last l)
   (cond [(empty? l) #f]
-        [(= (length l) 1) (first l)] #|COMPLETADO|#
-        [else (last (rest l))])) #|COMPLETADO|#
+        [(= (length l) 1) (first l)] 
+        [else (last (rest l))]))
 
 ; predicado-superpoblados Pais -> Boolean
 ; predicado-superpoblados toma un país y devuelve #t en el caso que haya
@@ -268,15 +286,28 @@ Integrantes:
 (check-expect (predicado-superpoblados GUATEMALA) #f)
 (check-expect (predicado-superpoblados CHINA) #t)
 
+; predicado-superpoblados: Pais -> Boolean
+; Es la funcion predicado usada en LISTA-PAISES-SUPERPOBLADOS
+; Toma un pais y compara si ese pais tiene un regstro de poblacion
+; mayor a MILMILLONES en el ultimo año censado.
+; Luego la funcion filtrar-paises lo recursa hasta recorrer
+; todos los registro de poblacion de ese pais.
 (define (predicado-superpoblados pais)
-  (> (Registro-Poblacion (last (Pais-Registros pais))) MILMILLONES)) #|COMPLETADO|#
+  (> (Registro-Poblacion (last (Pais-Registros pais))) MILMILLONES)) 
 
+; Lista de los paises superpoblados
+; Usando la funcion filtrar-paises, filtra los paises que tengan 
+; una poblacion mayor a MILMILLONES.
 (define LISTA-PAISES-SUPERPOBLADOS
   (filtrar-paises LISTA-PAISES-RECALCULADA predicado-superpoblados)) 
 
-; Nombres de los países superpoblados #|COMPLETADO|#
+
+; Nombres de los países superpoblados
+; Toma el atributo de "Pais-Nombre" a la estructura de pais,
+; que es cada elemento de la lista.
 (define NOMBRES-PAISES-SUPERPOBLADOS (map Pais-Nombre LISTA-PAISES-SUPERPOBLADOS))
-; Cantidad de países sobrepoblados #|COMPLETADO|#
+
+; Cantidad de países sobrepoblados
 (define CANT-PAISES-SUPERPOBLADOS (length NOMBRES-PAISES-SUPERPOBLADOS))
 
 ; Porcentaje de población en países superpoblados:
@@ -284,12 +315,17 @@ Integrantes:
 ; Suponemos que la población mundial se calcula a partir de las poblaciones
 ; de todos los países de los cuales tenemos registro.
 
-; operacion-sumar-poblaciones: #|COMPLETAR|#
-; #|COMPLETAR|# declaracion de proposito
-#|COMPLETAR|# ;casos de prueba
+; operacion-sumar-poblaciones: Pais Number -> Pais
+; Suma de poblaciones de un pais indicado, utilizando foldr.
+; Se le pasa un pais en el cual se hace la suma
+; y un numero n* que funciona como primer elemento para el foldr.
+(check-expect (operacion-sumar-poblaciones ARGENTINA 0) 75000000)
+(check-expect (operacion-sumar-poblaciones GUATEMALA 0) )
+
 (define (operacion-sumar-poblaciones pais n)
   (+ n (foldr + 0 (map Registro-Poblacion (Pais-Registros pais)))))
 
+; Indica la tasa de paises superpoblados con respecto al total.
 (define TASA-POBLACION-SUPERPOBLADOS
   (/ (operar-sobre-paises LISTA-PAISES-SUPERPOBLADOS operacion-sumar-poblaciones 0)
      (operar-sobre-paises LISTA-PAISES operacion-sumar-poblaciones 0)))
