@@ -10,6 +10,8 @@ Integrantes:
 - [Gozzerino, Franco].
 |#
 
+
+
 ;---------------------Diseño de datos------------------------
 
 ; Utilizamos exact-round
@@ -97,8 +99,15 @@ Integrantes:
                     (armar-lista-registros (rest lnh) lf))]))
 
 ; Datos para construir registros (sin nombres de países)
+(check-expect (member "54211" (first LISTA-DATOS-REGISTRO)) #t)
+(check-expect (member "0" (first LISTA-DATOS-REGISTRO)) #f)
+
 (define LISTA-DATOS-REGISTRO (map rest DATOS-PAISES))
+
 ; Lista de registros de cada país
+(check-expect (member (make-Registro 1960 54211) (first LISTA-REGISTROS)) #t)
+(check-expect (member (make-Registro 0 0) (first LISTA-REGISTROS)) #f)
+
 (define LISTA-REGISTROS (armar-lista-registros LISTA-DATOS-REGISTRO RANGO-FECHA))
 
 ; armar-paises: List(String) List(Registro) -> List(Pais)
@@ -125,8 +134,14 @@ Integrantes:
         ]))
 
 ; Nombres de países
+(check-expect (member "China" LISTA-NOMBRE-PAISES) #t)
+(check-expect (member "Hyrule" LISTA-NOMBRE-PAISES) #f)
+
 (define LISTA-NOMBRE-PAISES (map first DATOS-PAISES))
 ; Lista de países
+(check-expect (member "China" (map Pais-Nombre LISTA-PAISES)) #t)
+(check-expect (member "Hyrule" (map Pais-Nombre LISTA-PAISES)) #f)
+
 (define LISTA-PAISES (armar-paises LISTA-NOMBRE-PAISES LISTA-REGISTROS))
 
 ;---------------------Funciones de alto orden sobre listas de países------------------------
@@ -141,7 +156,6 @@ Integrantes:
                                                                   (make-Registro 2015 40000000))) 
                     CHINA )
 )                
-
 
 (define (transformar-paises lp transformacion)
   (cond [(empty? lp) empty]
@@ -204,6 +218,7 @@ Integrantes:
 ; registro-incompleto para el registro del pais que se le paso.
 (check-expect (predicado-registro-incompleto ANDORRA) #f)
 (check-expect (predicado-registro-incompleto ARGENTINA) #t)
+
 (define (predicado-registro-incompleto p) (registro-incompleto (Pais-Registros p)))
 
 ; Lista de paises con registro completo.
@@ -211,6 +226,7 @@ Integrantes:
 ; eliminado los que poseen un registro incompleto.
 (check-expect (member "West Bank and Gaza" (map Pais-Nombre LISTA-PAISES)) #t)
 (check-expect (member "West Bank and Gaza" (map Pais-Nombre LISTA-PAISES-REGISTRO-COMPLETO)) #f)
+
 (define LISTA-PAISES-REGISTRO-COMPLETO
   (filtrar-paises LISTA-PAISES predicado-registro-incompleto))
 
@@ -251,6 +267,7 @@ Integrantes:
 ; Lista de paises recalculados.
 ; Agarra la lista de paises con registro completo
 ; y los transforma utilizanco la funcion transformacion-recalcular.
+
 (define LISTA-PAISES-RECALCULADA
   (transformar-paises LISTA-PAISES-REGISTRO-COMPLETO transformacion-recalcular))
 
@@ -312,15 +329,23 @@ Integrantes:
 ; Lista de los paises superpoblados
 ; Usando la funcion filtrar-paises, filtra los paises que tengan 
 ; una poblacion mayor a MILMILLONES.
+(check-expect (member "China" (map Pais-Nombre LISTA-PAISES-SUPERPOBLADOS)) #t)
+(check-expect (member "Aruba" (map Pais-Nombre LISTA-PAISES-SUPERPOBLADOS)) #f)
+
 (define LISTA-PAISES-SUPERPOBLADOS
   (filtrar-paises LISTA-PAISES-RECALCULADA predicado-superpoblados)) 
 
 ; Nombres de los países superpoblados
 ; Toma el atributo de "Pais-Nombre" a la estructura de pais,
 ; que es cada elemento de la lista.
+(check-expect (member "China" NOMBRES-PAISES-SUPERPOBLADOS) #t)
+(check-expect (member "Bermuda" NOMBRES-PAISES-SUPERPOBLADOS) #f)
+
 (define NOMBRES-PAISES-SUPERPOBLADOS (map Pais-Nombre LISTA-PAISES-SUPERPOBLADOS))
 
 ; Cantidad de países sobrepoblados
+(check-expect CANT-PAISES-SUPERPOBLADOS 25)
+
 (define CANT-PAISES-SUPERPOBLADOS (length NOMBRES-PAISES-SUPERPOBLADOS))
 
 ; Porcentaje de población en países superpoblados:
@@ -338,6 +363,8 @@ Integrantes:
   (+ n (foldr + 0 (map Registro-Poblacion (Pais-Registros pais)))))
 
 ; Indica la tasa de paises superpoblados con respecto al total.
+(check-expect (/ (round (* 1000 TASA-POBLACION-SUPERPOBLADOS)) 1000) 0.817)
+
 (define TASA-POBLACION-SUPERPOBLADOS
   (/ (operar-sobre-paises LISTA-PAISES-SUPERPOBLADOS operacion-sumar-poblaciones 0)
      (operar-sobre-paises LISTA-PAISES operacion-sumar-poblaciones 0)))
